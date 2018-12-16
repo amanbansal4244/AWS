@@ -1,0 +1,3 @@
+com/aws/UpdateOrderStatusInput.class
+com/aws/UpdateOrderStatusHandler.class
+com/aws/UpdateOrderStatusOutput.class

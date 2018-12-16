@@ -1,0 +1,3 @@
+com/aws/SendNotificationOutput.class
+com/aws/SendNotificationInput.class
+com/aws/SendNotificationHandler.class
