@@ -1,0 +1,767 @@
+
+{
+  "id": "1111",
+  "firstName": "Amandeep",
+  "lastName": "Singh",
+  "contribution": "300",
+}
+{
+  "StartAt": "RequestController",
+  "States": {
+    
+    "RequestController" : {
+      "Type" : "Task",
+      "Next" : "Validation",
+      "Resource" : "arn:aws:lambda:eu-west-1:655285971889:function:A619485_RequestValidationLambda",
+      "ResultPath" : null
+    },
+    
+    "Validation": {
+      "Type": "Parallel",
+      "Next": "AggregationValidationResult",
+      "Branches" : [
+        {
+          "StartAt": "LengthValidation",
+          "States": {
+             "LengthValidation" : {
+                "Type": "Task",
+                "Resource":"arn:aws:lambda:eu-west-1:655285971889:function:A619485_LengthValidationLambda",
+                "ResultPath" : "$.error", 
+                "End": true
+             }
+          }
+        },
+        {
+          "StartAt": "FormatValidation",
+          "States": {
+             "FormatValidation" : {
+                "Type": "Task",
+                "Resource":"arn:aws:lambda:eu-west-1:655285971889:function:A619485_FormatValidationLambda",
+                "ResultPath" : "$.error",  
+                "End": true
+             }
+          }
+        }
+      ]
+    },
+    
+    "AggregationValidationResult": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:655285971889:function:AggregateLambda",
+      "Next": "ProcessRequestChoice"
+    },
+    
+    "ProcessRequestChoice" : {
+      "Type" : "Choice",
+      "Choices" : [
+        {
+          "Variable":"$",
+          "BooleanEquals" : true,
+          "Next" : "ProcessValidRequest"
+        }, 
+        {
+          "Variable":"$",
+          "BooleanEquals" : false,
+          "Next" : "ProcessInValidRequest"
+        }
+      ]
+    },
+    
+    "ProcessValidRequest" : {
+      "Type" : "Task",
+      "Resource" : "arn:aws:lambda:eu-west-1:655285971889:function:A619485_ProcessValidRequest",   
+      "End" : true
+    },
+    "ProcessInValidRequest" : {
+      "Type" : "Task",
+      "Resource" : "arn:aws:lambda:eu-west-1:655285971889:function:A619485_ProcessInvalidRequest",   
+      "End" : true
+    }
+  }
+}  "employer": "Google"
+
+
+
+
+Request_Controller:
+package models;
+
+public class ContributionModel {
+
+	private String id;
+	private String firstName;
+	private String lastName;
+	private String contribution;
+	private String employer;
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String getFirstName() {
+		return firstName;
+	}
+
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
+	}
+
+	public String getLastName() {
+		return lastName;
+	}
+
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
+	}
+
+	public String getContribution() {
+		return contribution;
+	}
+
+	public void setContribution(String contribution) {
+		this.contribution = contribution;
+	}
+
+	public String getEmployer() {
+		return employer;
+	}
+
+	public void setEmployer(String employer) {
+		this.employer = employer;
+	}
+
+}
+
+
+package lambdaPkg;
+
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+
+import models.ContributionModel;
+
+public class RequestValidation implements RequestHandler<ContributionModel, Boolean> {
+
+	public Boolean handleRequest(ContributionModel contributionModel, Context context) {
+		
+		boolean isValid = true;
+		System.out.println("Does return boolean which does not impact anything");
+		System.out.println("output = " + isValid);
+		return isValid;
+	}
+
+}
+
+
+
+
+Length_Validation:
+
+package models;
+
+public class ContributionModel {
+
+	private String id;
+	private String firstName;
+	private String lastName;
+	private String contribution;
+	private String employer;
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String getFirstName() {
+		return firstName;
+	}
+
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
+	}
+
+	public String getLastName() {
+		return lastName;
+	}
+
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
+	}
+
+	public String getContribution() {
+		return contribution;
+	}
+
+	public void setContribution(String contribution) {
+		this.contribution = contribution;
+	}
+
+	public String getEmployer() {
+		return employer;
+	}
+
+	public void setEmployer(String employer) {
+		this.employer = employer;
+	}
+
+}
+
+
+package models;
+
+public class Error {
+
+	private boolean IsValid;
+
+	private String errorCode;
+
+	private String errorDescription;
+
+	public boolean isIsValid() {
+		return IsValid;
+	}
+
+	public void setIsValid(boolean isValid) {
+		IsValid = isValid;
+	}
+
+	public String getErrorCode() {
+		return errorCode;
+	}
+
+	public void setErrorCode(String errorCode) {
+		this.errorCode = errorCode;
+	}
+
+	public String getErrorDescription() {
+		return errorDescription;
+	}
+
+	public void setErrorDescription(String errorDescription) {
+		this.errorDescription = errorDescription;
+	}
+
+}
+
+package lambdaPkg;
+
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+
+import models.ContributionModel;
+import models.Error;
+
+public class LengthValidation implements RequestHandler<ContributionModel, Error> {
+
+	public Error handleRequest(ContributionModel contributionModel, Context context) {
+		Error error = new Error();
+
+		if (contributionModel.getFirstName().length() > 10) {
+			error.setIsValid(false);
+			error.setErrorCode("Length error");
+			error.setErrorDescription("Length of Firstname is invalid");
+		} else {
+			error.setIsValid(true);
+		}
+
+		System.out.println("output = " + error.isIsValid());
+		
+		return error;
+	}
+
+}
+
+
+Format Validation:
+package models;
+
+public class ContributionModel {
+
+	private String id;
+	private String firstName;
+	private String lastName;
+	private String contribution;
+	private String employer;
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String getFirstName() {
+		return firstName;
+	}
+
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
+	}
+
+	public String getLastName() {
+		return lastName;
+	}
+
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
+	}
+
+	public String getContribution() {
+		return contribution;
+	}
+
+	public void setContribution(String contribution) {
+		this.contribution = contribution;
+	}
+
+	public String getEmployer() {
+		return employer;
+	}
+
+	public void setEmployer(String employer) {
+		this.employer = employer;
+	}
+
+}
+
+
+
+package models;
+
+public class Error {
+
+	private boolean IsValid;
+
+	private String errorCode;
+
+	private String errorDescription;
+
+	public boolean isIsValid() {
+		return IsValid;
+	}
+
+	public void setIsValid(boolean isValid) {
+		IsValid = isValid;
+	}
+
+	public String getErrorCode() {
+		return errorCode;
+	}
+
+	public void setErrorCode(String errorCode) {
+		this.errorCode = errorCode;
+	}
+
+	public String getErrorDescription() {
+		return errorDescription;
+	}
+
+	public void setErrorDescription(String errorDescription) {
+		this.errorDescription = errorDescription;
+	}
+
+}
+
+
+
+package lambdaPkg;
+
+import java.util.regex.Pattern;
+
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+
+import models.ContributionModel;
+import models.Error;
+
+public class FormatValidation implements RequestHandler<ContributionModel, Error> {
+
+	public Error handleRequest(ContributionModel contributionModel, Context context) {
+
+		Error error = new Error();
+		
+		if (!Pattern.matches("[a-zA-Z]+", contributionModel.getFirstName())) {
+			error.setIsValid(false);
+			error.setErrorCode("Format error");
+			error.setErrorDescription("Format of Firstname is invalid");
+		} else {
+			error.setIsValid(true);
+		}
+
+		System.out.println("output = " + error.isIsValid());
+		
+		return error;
+	}
+
+}
+
+
+package lambdaPkg;
+
+import java.util.regex.Pattern;
+
+public class MainClass {
+
+	public static void main(String[] args) {
+		
+		boolean isValid;
+		
+		 if(!Pattern.matches("[a-zA-Z]+", "sacacw23423")) {
+			 isValid = false;
+		 } else {
+			 isValid = true;
+		 }
+		 
+		System.out.println(isValid); 
+		
+	}
+	
+}
+
+
+
+
+
+
+
+Aggregation:
+
+package models;
+
+public class ContributionModel {
+
+	private String id;
+	private String firstName;
+	private String lastName;
+	private String contribution;
+	private String employer;
+	private Error error;
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String getFirstName() {
+		return firstName;
+	}
+
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
+	}
+
+	public String getLastName() {
+		return lastName;
+	}
+
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
+	}
+
+	public String getContribution() {
+		return contribution;
+	}
+
+	public void setContribution(String contribution) {
+		this.contribution = contribution;
+	}
+
+	public String getEmployer() {
+		return employer;
+	}
+
+	public void setEmployer(String employer) {
+		this.employer = employer;
+	}
+
+	public Error getError() {
+		return error;
+	}
+
+	public void setError(Error error) {
+		this.error = error;
+	}
+
+}
+
+package models;
+
+import java.util.List;
+
+public class AggregationResponseModel {
+
+	private boolean isValid;
+
+	private List<ContributionModel> contributionModelList;
+
+	public boolean isValid() {
+		return isValid;
+	}
+
+	public void setValid(boolean isValid) {
+		this.isValid = isValid;
+	}
+
+	public List<ContributionModel> getContributionModelList() {
+		return contributionModelList;
+	}
+
+	public void setContributionModelList(List<ContributionModel> contributionModelList) {
+		this.contributionModelList = contributionModelList;
+	}
+
+}
+
+package models;
+
+public class Error {
+
+	private boolean IsValid;
+
+	private String errorCode;
+
+	private String errorDescription;
+
+	public boolean isIsValid() {
+		return IsValid;
+	}
+
+	public void setIsValid(boolean isValid) {
+		IsValid = isValid;
+	}
+
+	public String getErrorCode() {
+		return errorCode;
+	}
+
+	public void setErrorCode(String errorCode) {
+		this.errorCode = errorCode;
+	}
+
+	public String getErrorDescription() {
+		return errorDescription;
+	}
+
+	public void setErrorDescription(String errorDescription) {
+		this.errorDescription = errorDescription;
+	}
+
+}
+
+package lambdaPkg;
+
+import java.util.List;
+
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+
+import models.ContributionModel;
+
+public class AggregationValidation implements RequestHandler<List<ContributionModel>, Boolean> {
+
+	public Boolean handleRequest(List<ContributionModel> contributionModelList, Context context) {
+		boolean isValid = true;
+		
+		for(ContributionModel contriLoop : contributionModelList) {
+			if(!contriLoop.getError().isIsValid()) {
+				isValid = false;
+				break;
+			}
+		}
+		
+		System.out.println("output = " + isValid);
+		
+		return isValid;
+	}
+
+}
+
+
+
+
+Process Valid:
+
+
+package lambdaPkg;
+
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+
+public class ProcessValidRequest implements RequestHandler<Object, Boolean> {
+
+	public Boolean handleRequest(Object contributionModel, Context context) {
+		
+		boolean isValid = true;
+		System.out.println("Process Valid request");
+		System.out.println(contributionModel.toString());
+		System.out.println("output = " + isValid);
+		return isValid;
+	}
+
+}
+
+Process INValid:
+
+package lambdaPkg;
+
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+
+public class ProcessInvalidRequest implements RequestHandler<Object, Boolean> {
+
+	public Boolean handleRequest(Object contributionModel, Context context) {
+		
+		boolean isValid = false;
+		System.out.println("Process Invalid request");
+		System.out.println(contributionModel.toString());
+		System.out.println("output = " + isValid);
+		
+		return isValid;
+	}
+
+}
+
+
+
+
+POM.xml
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.fil</groupId>
+  <artifactId>AggregationLambda</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <name>AggregationLambda</name>
+  <description>AggregationLambda</description>
+  
+  <properties>
+		<java.version>1.8</java.version>
+		<aws-lambda-java-core.version>1.2.0</aws-lambda-java-core.version>
+		<aws-lambda-java-events.version>2.2.2</aws-lambda-java-events.version>
+		<aws-java-sdk-dynamodb.version>1.11.428</aws-java-sdk-dynamodb.version>
+		<aws-java-sdk-lambda.version>1.11.428</aws-java-sdk-lambda.version>
+		<aws-java-sdk-sqs.version>1.11.428</aws-java-sdk-sqs.version>
+		<aws-java-sdk-xray.version>1.11.428</aws-java-sdk-xray.version>
+		<aws-java-sdk-kms.version>1.11.428</aws-java-sdk-kms.version>
+        <aws-servlet-java-container-version>1.1</aws-servlet-java-container-version>
+		<aws-lambda-java-log4j2.version>1.1.0</aws-lambda-java-log4j2.version>
+		<log4j.version>2.8.2</log4j.version>
+		<junit.version>4.12</junit.version>
+		<jackson-core.version>2.9.7</jackson-core.version>
+		<mockito.version>1.10.19</mockito.version>
+		<powermock.version>1.6.4</powermock.version>
+		<dependency-check-maven.version>2.1.0</dependency-check-maven.version>
+		<maven-shade-plugin.version>3.2.0</maven-shade-plugin.version>
+		<maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-lambda-java-core</artifactId>
+			<version>${aws-lambda-java-core.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-lambda-java-events</artifactId>
+			<version>${aws-lambda-java-events.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>${log4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+			<version>${log4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-lambda-java-log4j2</artifactId>
+			<version>${aws-lambda-java-log4j2.version}</version>
+		</dependency>
+	</dependencies>
+
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven-compiler-plugin.version}</version>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<useSystemClassLoader>false</useSystemClassLoader>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>${maven-shade-plugin.version}</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<transformers>
+								<transformer
+									implementation="com.github.edwgiz.mavenShadePlugin.log4j2CacheTransformer.PluginsCacheFileTransformer">
+								</transformer>
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.PluginXmlResourceTransformer" />
+							</transformers>
+							<filters>
+								<filter>
+									<artifact>log4j:log4j</artifact>
+									<includes>
+										<include>**</include>
+									</includes>
+								</filter>
+								<filter>
+									<artifact>commons-logging:commons-logging</artifact>
+									<includes>
+										<include>**</include>
+									</includes>
+								</filter>
+							</filters>
+							<createDependencyReducedPom>false</createDependencyReducedPom>
+
+						</configuration>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>com.github.edwgiz</groupId>
+						<artifactId>maven-shade-plugin.log4j2-cachefile-transformer</artifactId>
+						<version>2.8.1</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+		</plugins>
+
+	</build>
+  
+  
+</project>
+
+
