@@ -1,0 +1,577 @@
+	1. Install nodejs and visual studio code software : https://code.visualstudio.com/
+	2. Add below file with code :
+
+	list-tables.js
+		const AWS = require("aws-sdk");
+		AWS.config.update({ region: 'us-east-1' });
+		const dynamodb = new AWS.DynamoDB();
+		dynamodb.listTables((err, data)=>{
+		if(err) {
+		console.log(err);
+		} else {
+		console.log(data);
+		}
+		});
+		
+	3. Go to terminal 
+		a. Go to exact folder 
+		b. Run command to install aws-sdk library in this folder: npm install aws-sdk
+		c. Run command to run above program : node list-tables.js
+			i. Response : there are no tables listed but we are receiving the response from dynamo db.
+				{ TableNames: [] }
+				
+				
+	4. Go to exact folder  and Run command to create package.json file and click enter every time to put default values : npm init
+	5. Go to exact folder  and Run command to  install aws-sdk in node folder : npm install aws-sdk --save
+
+
+
+Table level operations with AWS-SDK :
+
+	1. List of table :
+	Code: 
+
+		const AWS = require("aws-sdk"); // add aws-adk dependency.
+		AWS.config.update({ region: 'us-east-1' });// add region of dynamodb
+		const dynamodb = new AWS.DynamoDB(); // initiate dynamodb class.
+		
+		dynamodb.listTables({}, (err, data)=>{
+		if(err) {
+		console.log(err);
+		} else {
+		console.log(data);
+		}
+		});
+	
+	Run command to run above program from visual studio code: node filename.js
+	
+			
+	2. Describe table :
+	Code: 
+	
+		const AWS = require("aws-sdk"); // add aws-adk dependency.
+		AWS.config.update({ region: 'us-east-1' });// add region of dynamodb
+		const dynamodb = new AWS.DynamoDB(); // initiate dynamodb class.
+		
+		dynamodb.describeTable({
+		TableName: "compare-yourself"
+		}, (err, data)=>{
+		if(err) {
+		console.log(err);
+		} else {
+		console.log(JSON.stringify(data, null, 2));
+		}
+		});
+	
+	Run command to run above program from visual studio code: node filename.js
+	
+	
+	3. Create table :
+	Code: 
+	
+	const AWS = require("aws-sdk"); // add aws-adk dependency.
+	AWS.config.update({ region: 'us-east-1' });// add region of dynamodb
+	const dynamodb = new AWS.DynamoDB(); // initiate dynamodb class.
+	
+	//Note : we can add secondary index as well.
+	dynamodb.createTable({
+	TableName: "td_notes_sdk",
+	AttributeDefinitions: [
+	{
+	AttributeName: "user_id",
+	AttributeType: "S"
+	},
+	{
+	AttributeName: "timestamp",
+	AttributeType: "N"
+	}
+	],
+	KeySchema: [
+	{
+	AttributeName: "user_id",
+	KeyType: "HASH"
+	},
+	{
+	AttributeName: "timestamp",
+	KeyType: "RANGE"
+	}
+	],
+	ProvisionedThroughput: {
+	ReadCapacityUnits: 1,
+	WriteCapacityUnits: 1
+	}
+	}, (err, data)=>{
+	if(err) {
+	console.log(err);
+	} else {
+	console.log(JSON.stringify(data, null, 2));
+	}
+	});
+	
+	Run command to run above program from visual studio code: node filename.js
+	
+	
+	
+	4. Update table :
+	Code: 
+	
+	const AWS = require("aws-sdk"); // add aws-adk dependency.
+	AWS.config.update({ region: 'us-east-1' });// add region of dynamodb
+	const dynamodb = new AWS.DynamoDB(); // initiate dynamodb class.
+	
+	dynamodb.updateTable({
+	TableName: "td_notes_sdk",
+	ProvisionedThroughput: {
+	ReadCapacityUnits: 2,
+	WriteCapacityUnits: 1
+	}
+	}, (err, data) => {
+	if(err) {
+	console.log(err);
+	} else {
+	console.log(JSON.stringify(data, null, 2));
+	}
+	});
+	
+	Run command to run above program from visual studio code: node filename.js
+	
+	
+	
+	5. Delete table :
+	Code: 
+	
+	const AWS = require("aws-sdk"); // add aws-adk dependency.
+	AWS.config.update({ region: 'us-east-1' });// add region of dynamodb
+	const dynamodb = new AWS.DynamoDB(); // initiate dynamodb class.
+	dynamodb.deleteTable({
+	TableName: "td_notes_sdk"
+	}, (err, data) => {
+	if(err) {
+	console.log(err);
+	} else {
+	console.log(JSON.stringify(data, null, 2));
+	}
+	});
+	
+	Run command to run above program from visual studio code: node filename.js
+	
+
+
+
+Write operations - Item level operations with AWS-SDK :
+	AWS.DYNAMODB provides another class AWS.DYNAMODB.DocumentClient , its kind of wrapper class of main DYNAMODB class and provides high level access of DYNAMODB when working with ITEMS. It really simplifies working with DYNAMODB items by wrapping unnecessary details. In this DocumentClient class, DYNAMODB internal data types are mapped to the native Java Script types, making easier to developer to write better and faster code, so we don't have to specifies weather attributes is number or string etc. We simply use the java script native types and DocumentClient class will automatically mapped them to appropriate data types that DYNAMODB understands
+
+	1. Put item in table :
+	Code: 
+
+	const AWS = require("aws-sdk");
+	AWS.config.update({ region: 'us-east-1' });
+	const docClient = new AWS.DynamoDB.DocumentClient(); // initiate DocumentClient class 
+	
+	docClient.put({
+	TableName: 'td_notes_sdk',
+	Item: {
+	user_id: 'bb',
+	timestamp: 2,
+	title: 'changed title',
+	content: 'changed content'
+	}
+	}, (err, data)=>{
+	if(err) {
+	console.log(err);
+	} else {
+	console.log(data);
+	}
+	});
+	
+	Run command to run above program from visual studio code: node filename.js
+
+
+	2. Update item in table :
+	Code: 
+
+	const AWS = require("aws-sdk");
+	AWS.config.update({ region: 'us-east-1' });
+	const docClient = new AWS.DynamoDB.DocumentClient(); // initiate DocumentClient class 
+	
+	docClient.update({
+	TableName: 'td_notes_sdk',
+	Key: {
+	user_id: 'bb',
+	timestamp: 2
+	},
+	UpdateExpression: 'set #t = :t',
+	ExpressionAttributeNames: {
+	'#t': 'title'
+	},
+	ExpressionAttributeValues: {
+	':t': "Updated title"
+	}
+	}, (err, data)=>{
+	if(err) {
+	console.log(err);
+	} else {
+	console.log(data);
+	}
+	});
+	
+	Run command to run above program from visual studio code: node filename.js
+	
+	3. Delete item in table :
+	Code: 
+
+	const AWS = require("aws-sdk");
+	AWS.config.update({ region: 'us-east-1' });
+	const docClient = new AWS.DynamoDB.DocumentClient(); // initiate DocumentClient class 
+	
+	docClient.delete({
+	TableName: 'td_notes_sdk',
+	Key: {
+	user_id: 'bb',
+	timestamp: 1
+	}
+	}, (err, data)=>{
+	if(err) {
+	console.log(err);
+	} else {
+	console.log(data);
+	}
+	});
+	
+	Run command to run above program from visual studio code: node filename.js
+	
+	4. Batch-Write item in table :
+	Code: 
+
+	const AWS = require("aws-sdk");
+	AWS.config.update({ region: 'us-east-1' });
+	const docClient = new AWS.DynamoDB.DocumentClient(); // initiate DocumentClient class 
+	//This simply allows us to put or delete multiple items at once.
+	docClient.batchWrite({
+	RequestItems: {
+	'td_notes_sdk': [
+	{
+	DeleteRequest: {
+	Key: {
+	user_id: 'bb',
+	timestamp: 2
+	}
+	}
+	},
+	{
+	PutRequest: {
+	Item: {
+	user_id: '11',
+	timestamp: 1,
+	title: 'Title 11',
+	content: 'Content 11'
+	}
+	}
+	},
+	{
+	PutRequest: {
+	Item: {
+	user_id: '22',
+	timestamp: 2,
+	title: 'Title 22',
+	content: 'Content 22'
+	}
+	}
+	}
+	]
+	}
+	}, (err, data)=>{
+	if(err) {
+	console.log(err);
+	} else {
+	console.log(data);
+	}
+	});
+	
+	Run command to run above program from visual studio code: node filename.js
+	
+	
+	
+Conditional Write operations - Item level operations with AWS-SDK :
+		
+	
+		
+	
+	Idempotent : means if we make same conditional write request to dynamo db multiple time, only first request will be considered and for subsequent request : we will get below error:
+			message: 'The conditional request failed',
+			  code: 'ConditionalCheckFailedException',
+			
+	
+		1. Write conditionally item in table :
+		Code: 
+	
+		const AWS = require("aws-sdk");
+		AWS.config.update({ region: 'us-east-1' });
+		const docClient = new AWS.DynamoDB.DocumentClient();
+		
+		/*
+		I want to perform this opeartion if and only if an item with user_id 'ABC' does not have 
+		timestamp attribute with value 1, in other words writes the items to the table if timestamp '1' does not exist
+		for this particular user_id 'ABC'.
+		*/
+		
+		docClient.put({
+		TableName: 'td_notes_sdk',
+		Item: {
+		user_id: 'ABC',
+		timestamp: 1,
+		title: 'New Title',
+		content: 'New Content'
+		},
+		ConditionExpression: '#t <> :t',
+		ExpressionAttributeNames: {
+		'#t': 'timestamp'
+		},
+		ExpressionAttributeValues: {
+		':t': 1
+		}
+		}, (err, data)=>{
+		if(err) {
+		console.log(err);
+		} else {
+		console.log(data);
+		}
+		});
+		
+		Run command to run above program from visual studio code: node filename.js
+	
+	
+	
+Atomic Counter - Item level operations with AWS-SDK :
+
+	
+
+
+Add one more column to DB 'views' -> number -> 0 in 'td_notes_sdk' table.
+
+In this example , we can run the same program multiple without getting any error and each time 'views' value will be updated by 1.
+
+This approach is not suitable where applications demanding high degree of accuracy like banking domain.
+
+	1. Write atomic counter item in table :
+	Code: 
+
+	const AWS = require("aws-sdk");
+	AWS.config.update({ region: 'us-east-1' });
+	const docClient = new AWS.DynamoDB.DocumentClient();
+	docClient.update({
+	TableName: 'td_notes_sdk',
+	Key: {
+	user_id: 'ABC',
+	timestamp: 1
+	},
+	UpdateExpression: 'set #v = #v + :incr',
+	ExpressionAttributeNames: {
+	'#v': 'views'
+	},
+	ExpressionAttributeValues: {
+	':incr': 1
+	}
+	}, (err, data)=> {
+	if(err) {
+	console.log(err);
+	} else {
+	console.log(data);
+	}
+	});
+	
+	Run command to run above program from visual studio code: node filename.js
+	
+	
+	
+Read Operations - Item level operations with AWS-SDK :
+
+	1. Get item in table :
+	Code: 
+
+	const AWS = require("aws-sdk");
+	AWS.config.update({ region: 'us-east-1' });
+	const docClient = new AWS.DynamoDB.DocumentClient();
+	docClient.get({
+	TableName: 'td_notes_sdk',
+	Key: {
+	user_id: 'ABC',
+	timestamp: 1
+	}
+	}, (err, data)=>{
+	if(err) {
+	console.log(err);
+	} else {
+	console.log(data);
+	}
+	});
+	
+	Run command to run above program from visual studio code: node filename.js
+
+
+	2. Query item in table :
+	Code: 
+
+	const AWS = require("aws-sdk");
+	AWS.config.update({ region: 'us-east-1' });
+	const docClient = new AWS.DynamoDB.DocumentClient();
+	
+	docClient.query({
+	TableName: 'td_notes_sdk',
+	KeyConditionExpression: "user_id = :uid",
+	ExpressionAttributeValues: {
+	":uid": "ABC"
+	}
+	}, (err, data)=>{
+	if(err) {
+	console.log(err);
+	} else {
+	console.log(data);
+	}
+	});
+	
+	Run command to run above program from visual studio code: node filename.js
+	
+	3. Scan item in table :
+	Code: 
+
+	const AWS = require("aws-sdk");
+	AWS.config.update({ region: 'us-east-1' });
+	const docClient = new AWS.DynamoDB.DocumentClient();
+	
+	docClient.scan({
+	TableName: 'td_notes_sdk',
+	FilterExpression: "cat = :cat",
+	ExpressionAttributeValues: {
+	":cat": "general"
+	}
+	}, (err, data)=>{
+	if(err) {
+	console.log(err);
+	} else {
+	console.log(data);
+	}
+	});
+	
+	Run command to run above program from visual studio code: node filename.js
+	
+	4. Batch-Get item in table :
+	Code: 
+
+	const AWS = require("aws-sdk");
+	AWS.config.update({ region: 'us-east-1' });
+	const docClient = new AWS.DynamoDB.DocumentClient();
+	
+	// we can get data from mulitple tables as well.
+	
+	docClient.batchGet({
+	RequestItems: {
+	'td_notes_sdk': {
+	Keys: [
+	{
+	user_id: 'ABC',
+	timestamp: 1
+	},
+	{
+	user_id: '22',
+	timestamp: 2
+	}
+	]
+	},
+	'td_notes_test': {
+	Keys: [
+	{ 
+	user_id: '11',
+	timestamp: 1
+	}
+	]
+	}
+	}
+	}, (err, data)=>{
+	if(err) {
+	console.log(err);
+	} else {
+	console.log(JSON.stringify(data, null, 2));
+	}
+	});
+	
+	Run command to run above program from visual studio code: node filename.js
+	
+	
+Paginated Read - Item level operations with AWS-SDK :
+	
+	1. Paginated Read item in table :
+	Code: 
+	
+		const async = require("async");
+		const _ = require("underscore");
+		const AWS = require("aws-sdk");
+		AWS.config.update({ region: 'us-east-1' });
+		const docClient = new AWS.DynamoDB.DocumentClient();
+		var startKey = [];
+		var results = []; // to hold result.
+		var pages = 0;// to store the count of the pages.
+		//we use do while function from the 'async' module and it takes three functions as an argument.
+		async.doWhilst(
+		/* iteratee function which takes callback as an agrument.
+		This is async function , which is always executed at first time and then executed again each time when truth test passes.
+		*/
+		(callback)=>{
+		let params = {
+		TableName: 'td_notes_sdk',
+		Limit: 2 // dynamodb returns 3 items at a one time.
+		};
+		/*
+		LastEvaluatedKey : this is simply set of index attribute of the next item uo to which response was returned.
+		So we can use this to get the next set of the data in subsequent/scan query.
+		ExclusiveStartKey : we must pass LastEvaluatedKey in subsequent/scan query as a ExclusiveStartKey to get the next page of the data.
+		if there is no LastEvaluatedKey in data response that means we have reached the last page of the data.
+		*/
+		if(!_.isEmpty(startKey)) {
+		params.ExclusiveStartKey = startKey;
+		}
+		docClient.scan(params, (err, data)=>{
+		if(err) {
+		console.log(err);
+		callback(err, {});
+		} else {
+		if(typeof data.LastEvaluatedKey !== 'undefined') {
+		startKey = data.LastEvaluatedKey;
+		} else {
+		startKey = [];
+		}
+		//if data has items then we add into results array with the help of '_.union'
+		if(!_.isEmpty(data.Items)){
+		results = _.union(results, data.Items);
+		}
+		pages++; // increases the pages.
+		callback(null, results);
+		}
+		});
+		},
+		//truth test : this loop continue to run as long as this function returns a boolean true.
+		()=>{
+		if(_.isEmpty(startKey)) {
+		return false;
+		} else {
+		return true;
+		}
+		},
+		/* A callback function which is called after the test function has failed and repeated execution 
+		of fn has stopped. callback will be passed an error if one occurred, otherwise null
+		*/
+		(err, data) => {
+		if(err) {
+		console.log(err);
+		} else {
+		console.log(data);
+		console.log("Item Count", data.length);
+		console.log("Pages", pages);
+		}
+		}
+		);
+	
+	
+	Note : run to add undersocre and async dependency :  npm install async underscore --save
+	Run command to run above program from visual studio code: node filename.js
+	
