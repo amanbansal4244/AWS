@@ -1,0 +1,51 @@
+const AWS = require("aws-sdk");
+AWS.config.update({ region: 'us-east-2' });
+const dynamodb = new AWS.DynamoDB(); // initiate dynamodb class.
+const docClient = new AWS.DynamoDB.DocumentClient();
+
+const faker = require('faker');
+const moment = require('moment');
+
+/* For the sake of simulating continous load, we can generate
+ either genareting 1000 items and see if that triggers auto-scaling
+ or however full proof simple way is to use setInterval() method to issue put items request continuously.
+
+ and if we see auto-scaling is happeing, we can terminate the program using CTRL+C.
+
+ Let's say we write 3 WCU per second, that means we are execding our current minimum limit od WCU which is 1 WCU.
+ So we are creating setInterval() arrow function with interval of 300 ms (Just to keep inserting items into Dynamo DB)
+ and inside the arroow function, we are going
+ to put request.
+*/
+setInterval(()=>{
+    let params = {
+        TableName: "global_td_notes1"
+    };
+
+    generateNotesItem((item)=>{
+        params.Item = item;
+        docClient.put(params, (err, data)=>{
+          //dynamodb.batchWriteItem(params, (err, data)=>{
+            if(err) {
+                console.log(err);
+            } else {
+                console.log(data);
+            }
+        });
+    });
+}, 300);
+
+/*We are generating below 8 new clomuns automatically.
+*/
+function generateNotesItem(callback) {
+    callback({
+        User_Id: faker.random.uuid(),
+        timestamp: moment().unix(),
+        cat: faker.random.word(),
+        title: faker.company.catchPhrase(),
+        content: faker.hacker.phrase(),
+        note_id: faker.random.uuid(),
+        user_name: faker.internet.userName()
+       // expires: moment().unix() + 600 // expires the attrubute in 100 seconds.
+    });
+}
