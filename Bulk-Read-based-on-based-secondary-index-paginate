@@ -1,0 +1,103 @@
+const async = require("async");
+const _ = require("underscore");
+const AWS = require("aws-sdk");
+AWS.config.update({ region: 'us-east-2' });
+const dynamodb = new AWS.DynamoDB(); // initiate dynamodb class.
+const docClient = new AWS.DynamoDB.DocumentClient();
+
+var startKey = [];
+var results = []; // to hold result.
+var pages = 0;// to store the count of the pages.
+//we use do while function from the 'async' module and it takes three functions as an argument.
+async.doWhilst(
+    /* iteratee function which takes callback as an agrument.
+    This is async function , which is always executed at first time and then executed again each time when truth test passes.
+    */
+    (callback)=>{
+        let params = {
+            TableName: 'global_td_notes1',
+             /*Set ConsistentRead: true -> Just to increase the capacity consumption.
+             If true, a strongly consistent read is used; 
+             if false (the default), an eventually consistent read is used.
+            
+             Note : 'Consistent reads are not supported on global secondary indexes'.
+            */
+            ConsistentRead: false,
+            IndexName: 'user_name-index',
+            /*  we should use 'KeyConditionExpression' when we use 'query' function to get the items from Dynamo DB.
+             if we use 'FilterExpression' with 'query' then we would get below error:
+                'Either the KeyConditions or KeyConditionExpression parameter must be specified in the request.',
+                code: 'ValidationException',
+
+            and we should use 'FilterExpression' when we use 'scan' function to get the items from Dynamo DB.
+            if we use 'KeyConditionExpression' with 'scan' then we would get below error:
+                'ExpressionAttributeValues can only be specified when using expressions: FilterExpression is null',
+                code: 'ValidationException',
+            */
+            KeyConditionExpression: 'user_name = :user_name_id',
+            //FilterExpression: 'user_name = :user_name_id',
+            ExpressionAttributeValues: { ':user_name_id': 'Anika82'} ,
+            Limit: 5 // dynamodb returns 3 items at a one time.
+        };
+
+        /*
+        LastEvaluatedKey :  this is simply set of index attribute of the next item uo to which response was returned.
+                            So we can use this to get the next set of the data in subsequent/scan query.
+        ExclusiveStartKey : we must pass LastEvaluatedKey in subsequent/scan query as a ExclusiveStartKey to get the next page of the data.
+
+        if there is no LastEvaluatedKey in data response that means we have reached the last page of the data.
+        */
+        if(!_.isEmpty(startKey)) {
+            params.ExclusiveStartKey = startKey;
+        }
+
+        /*We can use 'scan' function over 'query' function but due to some limitation of 
+        the 'scan' function, we are advisiable that we should try to use 'query' function as possible as we can.
+        */
+        //docClient.scan(params, (err, data)=>{
+        docClient.query(params, (err, data)=>{
+            if(err) {
+                console.log(err);
+                callback(err, {});
+            } else {
+                if(typeof data.LastEvaluatedKey !== 'undefined') {
+                    startKey = data.LastEvaluatedKey;
+                } else {
+                    startKey = [];
+                }
+
+                //if data has items then we add into results array with the help of '_.union'
+                if(!_.isEmpty(data.Items)){
+                    //results = results.concat(data.Items);
+                    results = _.union(results, data.Items);
+                }
+
+                pages++; // increases the pages.
+
+                callback(null, results);
+            }
+        });
+    },
+
+    //truth test : this loop continue to run as long as this function returns a Boolean true.
+    ()=>{
+        if(_.isEmpty(startKey)) {
+            return false;
+        } else {
+            return true;
+        }
+    },
+
+    /* A callback function which is called after the test function has failed and repeated execution 
+    of fn has stopped. callback will be passed an error if one occurred, otherwise null
+    */
+    (err, data) => {
+        if(err) {
+            console.log(err);
+        } else {
+            console.log(data);
+            console.log("Item Count", data.length);
+            console.log("Pages", pages);
+        }
+    }
+);
